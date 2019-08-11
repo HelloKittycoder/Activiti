@@ -905,8 +905,10 @@ public class DbSqlSession implements Session {
     boolean isUpgradeNeeded = false;
     int matchingVersionIndex = -1;
 
+    // 判断流程引擎表（核心表act_ru_execution）是否存在
     if (isEngineTablePresent()) {
 
+      // 如果存在，则获取正在使用的流程引擎的版本；然后和当前jar包的流程引擎版本比对，判断是否需要升级，需要的话执行upgrade相应sql
       PropertyEntity dbVersionProperty = selectById(PropertyEntity.class, "schema.version");
       String dbVersion = dbVersionProperty.getValue();
 
@@ -949,6 +951,7 @@ public class DbSqlSession implements Session {
       }
 
     } else {
+      // 如果不存在，则执行创建engine相关表的操作
       dbSchemaCreateEngine();
     }
     if (isHistoryTablePresent()) {
@@ -956,6 +959,7 @@ public class DbSqlSession implements Session {
         dbSchemaUpgrade("history", matchingVersionIndex);
       }
     } else if (dbSqlSessionFactory.isDbHistoryUsed()) {
+      // 是否要用到history相关的表 isDbHistoryUsed（反向推出从ProcessEngineConfiguration中取的）
       dbSchemaCreateHistory();
     }
 
@@ -964,6 +968,7 @@ public class DbSqlSession implements Session {
         dbSchemaUpgrade("identity", matchingVersionIndex);
       }
     } else if (dbSqlSessionFactory.isDbIdentityUsed()) {
+      // 是否要用到identity相关的表 isDbIdentityUsed（反向推出从ProcessEngineConfiguration中取的）
       dbSchemaCreateIdentity();
     }
 
@@ -1119,14 +1124,17 @@ public class DbSqlSession implements Session {
     }
   }
 
+  // 获取指定ddl脚本的资源路径
   public String getResourceForDbOperation(String directory, String operation, String component) {
     String databaseType = dbSqlSessionFactory.getDatabaseType();
     return "org/activiti/db/" + directory + "/activiti." + databaseType + "." + operation + "." + component + ".sql";
   }
 
+  // 执行给定资源路径下的ddl脚本
   public void executeSchemaResource(String operation, String component, String resourceName, boolean isOptional) {
     InputStream inputStream = null;
     try {
+      // 获取ddl脚本的inputStream
       inputStream = ReflectUtil.getResourceAsStream(resourceName);
       if (inputStream == null) {
         if (isOptional) {
@@ -1135,6 +1143,7 @@ public class DbSqlSession implements Session {
           throw new ActivitiException("resource '" + resourceName + "' is not available");
         }
       } else {
+        // 执行脚本核心操作
         executeSchemaResource(operation, component, resourceName, inputStream);
       }
 
@@ -1150,7 +1159,9 @@ public class DbSqlSession implements Session {
     try {
       Connection connection = sqlSession.getConnection();
       Exception exception = null;
+      // 将inputStream转化为字节数组
       byte[] bytes = IoUtil.readInputStream(inputStream, resourceName);
+      // 将字节数组转化为字符串
       String ddlStatements = new String(bytes);
 
       // Special DDL handling for certain databases
@@ -1170,6 +1181,7 @@ public class DbSqlSession implements Session {
         log.info("Could not get database metadata", e);
       }
 
+      // 通过StringReader逐行读取字符串中的内容
       BufferedReader reader = new BufferedReader(new StringReader(ddlStatements));
       String line = readNextTrimmedLine(reader);
       boolean inOraclePlsqlBlock = false;
@@ -1209,11 +1221,14 @@ public class DbSqlSession implements Session {
               sqlStatement = addSqlStatementPiece(sqlStatement, line.substring(0, line.length() - 1));
             }
 
+            // 获取Statement对象
             Statement jdbcStatement = connection.createStatement();
             try {
               // no logging needed as the connection will log it
               log.debug("SQL: {}", sqlStatement);
+              // 执行sqlStatement
               jdbcStatement.execute(sqlStatement);
+              // 关闭Statement
               jdbcStatement.close();
             } catch (Exception e) {
               if (exception == null) {
@@ -1298,6 +1313,7 @@ public class DbSqlSession implements Session {
   }
 
   public void performSchemaOperationsProcessEngineBuild() {
+    // 获取databaseSchemaUpdate（默认值为false，其他取值还有create-drop,drop-create,create,true）
     String databaseSchemaUpdate = Context.getProcessEngineConfiguration().getDatabaseSchemaUpdate();
     log.debug("Executing performSchemaOperationsProcessEngineBuild with setting " + databaseSchemaUpdate);
     if (ProcessEngineConfigurationImpl.DB_SCHEMA_UPDATE_DROP_CREATE.equals(databaseSchemaUpdate)) {
