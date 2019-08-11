@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * 流程引擎实现类
  * @author Tom Baeyens
  */
 public class ProcessEngineImpl implements ProcessEngine {
@@ -60,6 +61,7 @@ public class ProcessEngineImpl implements ProcessEngine {
   protected ProcessEngineConfigurationImpl processEngineConfiguration;
 
   public ProcessEngineImpl(ProcessEngineConfigurationImpl processEngineConfiguration) {
+    // 一系列服务类属性填充
     this.processEngineConfiguration = processEngineConfiguration;
     this.name = processEngineConfiguration.getProcessEngineName();
     this.repositoryService = processEngineConfiguration.getRepositoryService();
@@ -77,6 +79,7 @@ public class ProcessEngineImpl implements ProcessEngine {
     this.formEngineRepositoryService = processEngineConfiguration.getFormEngineRepositoryService();
     this.formEngineFormService = processEngineConfiguration.getFormEngineFormService();
 
+    // 根据databaseSchemaUpdate执行不同的逻辑
     if (processEngineConfiguration.isUsingRelationalDatabase() && processEngineConfiguration.getDatabaseSchemaUpdate() != null) {
       commandExecutor.execute(processEngineConfiguration.getSchemaCommandConfig(), new SchemaOperationsProcessEngineBuild());
     }
@@ -87,31 +90,41 @@ public class ProcessEngineImpl implements ProcessEngine {
       log.info("ProcessEngine {} created", name);
     }
 
+    // 向流程引擎管理类注册当前的流程引擎实现类实例对象
     ProcessEngines.registerProcessEngine(this);
 
+    // 判断是否需要开启异步执行器
     if (asyncExecutor != null && asyncExecutor.isAutoActivate()) {
       asyncExecutor.start();
     }
 
+    // 触发流程引擎生命周期监听器
     if (processEngineConfiguration.getProcessEngineLifecycleListener() != null) {
       processEngineConfiguration.getProcessEngineLifecycleListener().onProcessEngineBuilt(this);
     }
 
+    // 转发引擎创建的事件
     processEngineConfiguration.getEventDispatcher().dispatchEvent(ActivitiEventBuilder.createGlobalEvent(ActivitiEventType.ENGINE_CREATED));
   }
 
+  // 关闭流程引擎
   public void close() {
+    // 从流程引擎管理类中移除当前的流程引擎实现类实例对象
     ProcessEngines.unregister(this);
+    // 判断是否需要关闭异步执行器
     if (asyncExecutor != null && asyncExecutor.isActive()) {
       asyncExecutor.shutdown();
     }
 
+    // 执行流程引擎关闭的命令
     commandExecutor.execute(processEngineConfiguration.getSchemaCommandConfig(), new SchemaOperationProcessEngineClose());
 
+    // 触发流程引擎生命周期监听器
     if (processEngineConfiguration.getProcessEngineLifecycleListener() != null) {
       processEngineConfiguration.getProcessEngineLifecycleListener().onProcessEngineClosed(this);
     }
-    
+
+    // 转发引擎关闭的事件
     processEngineConfiguration.getEventDispatcher().dispatchEvent(ActivitiEventBuilder.createGlobalEvent(ActivitiEventType.ENGINE_CLOSED));
   }
 
