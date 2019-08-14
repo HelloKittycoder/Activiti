@@ -80,6 +80,8 @@ public class RepositoryServiceImpl extends ServiceImpl implements RepositoryServ
         return new DeploymentBuilderImpl(RepositoryServiceImpl.this);
       }
     });
+    // 可以用lambda表达式改写成
+    // return commandExecutor.execute(commondContext->new DeploymentBuilderImpl(RepositoryServiceImpl.this));
   }
 
   public Deployment deploy(DeploymentBuilderImpl deploymentBuilder) {
