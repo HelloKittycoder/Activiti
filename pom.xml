@@ -723,7 +723,8 @@
 		<module>modules/activiti-dmn-model</module>
 		<module>modules/activiti-dmn-api</module>
 		<module>modules/activiti-engine</module>
-	</modules>
+        <module>modules/activiti-lsc-test</module>
+    </modules>
 
 	<build>
 		<plugins>

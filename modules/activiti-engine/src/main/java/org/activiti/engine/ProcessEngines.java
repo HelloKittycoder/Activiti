@@ -113,6 +113,7 @@ public abstract class ProcessEngines {
 
   protected static void initProcessEngineFromSpringResource(URL resource) {
     try {
+      // 通过反射调用SpringConfigurationHelper的buildProcessEngine方法
       Class<?> springConfigurationHelperClass = ReflectUtil.loadClass("org.activiti.spring.SpringConfigurationHelper");
       Method method = springConfigurationHelperClass.getDeclaredMethod("buildProcessEngine", new Class<?>[] { URL.class });
       ProcessEngine processEngine = (ProcessEngine) method.invoke(null, new Object[] { resource });

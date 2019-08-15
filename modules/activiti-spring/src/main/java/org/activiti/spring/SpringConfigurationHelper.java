@@ -34,7 +34,9 @@ public class SpringConfigurationHelper {
   public static ProcessEngine buildProcessEngine(URL resource) {
     log.debug("==== BUILDING SPRING APPLICATION CONTEXT AND PROCESS ENGINE =========================================");
 
+    // 通过activiti-context.xml构建出ApplicationContext，中间会调用ProcessEngineFactoryBean的getObject方法
     ApplicationContext applicationContext = new GenericXmlApplicationContext(new UrlResource(resource));
+    // 从已有的ApplicationContext构建出ProcessEngine对象
     Map<String, ProcessEngine> beansOfType = applicationContext.getBeansOfType(ProcessEngine.class);
     if ((beansOfType == null) || (beansOfType.isEmpty())) {
       throw new ActivitiException("no " + ProcessEngine.class.getName() + " defined in the application context " + resource.toString());
